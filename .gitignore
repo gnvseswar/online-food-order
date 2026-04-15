@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+
+# Backend local database artifacts
+backend/*.mv.db
+backend/*.trace.db
+
+# Maven
+backend/target/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
