@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -36,6 +37,8 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     @Value("${app.cors.allowed-origin-patterns:http://localhost:5173}")
     private String allowedOriginPatterns;
+    @Value("${spring.h2.console.enabled:false}")
+    private boolean h2ConsoleEnabled;
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -60,17 +63,28 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> 
-                    auth.requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/restaurants/**").permitAll()
                         .requestMatchers("/api/foods/restaurant/**", "/api/foods").permitAll()
-                        .requestMatchers("/api/swiggy/**").permitAll()
-                        .anyRequest().authenticated()
-                );
-        
-        // Fix H2 console display
-        http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
+                        .requestMatchers("/api/swiggy/**").permitAll();
+                    if (h2ConsoleEnabled) {
+                        auth.requestMatchers("/h2-console/**").permitAll();
+                    }
+                    auth.anyRequest().authenticated();
+                });
+
+        http.headers(headers -> headers
+                .contentTypeOptions(contentTypeOptions -> {})
+                .httpStrictTransportSecurity(hsts -> hsts
+                        .includeSubDomains(true)
+                        .maxAgeInSeconds(31536000))
+                .frameOptions(frameOptions -> {
+                    if (h2ConsoleEnabled) {
+                        frameOptions.sameOrigin();
+                    }
+                }));
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

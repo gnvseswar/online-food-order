@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+if (import.meta.env.PROD && !apiBaseUrl) {
+    // Keep UI usable even when deployment env vars are missing.
+    // API calls will fail until VITE_API_BASE_URL is configured.
+    console.warn('VITE_API_BASE_URL is missing in production. Falling back to localhost API URL.');
+}
+
+const API_URL = apiBaseUrl || 'http://localhost:8080/api';
 
 const api = axios.create({
     baseURL: API_URL,
