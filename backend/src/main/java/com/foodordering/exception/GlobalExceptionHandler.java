@@ -2,6 +2,8 @@ package com.foodordering.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.slf4j.Logger;
@@ -27,6 +29,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(BadRequestException ex) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
+    public ResponseEntity<Map<String, Object>> handleAuthFailures(Exception ex) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password");
     }
 
     @ExceptionHandler(Exception.class)
